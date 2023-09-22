@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: openldap
+    hostname: openldap
+    ports:
+      - $LDAP_PORT:389
+      - $LDAPS_PORT:636
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./data/slapd/database:/var/lib/ldap:z
+      - ./data/slapd/config:/etc/ldap/slapd.d:z
+      - ./data/certificates:/container/service/slapd/assets/certs:z
+    environment: 
+      - LDAP_DOMAIN=$LDAP_DOMAIN
+      - LDAP_BASE_DN=$LDAP_BASE_DN
+      - LDAP_ORGANISATION=$LDAP_ORGANISATION
+      - LDAP_ADMIN_USERNAME=$LDAP_ADMIN_USERNAME
+      - LDAP_ADMIN_PASSWORD=$LDAP_ADMIN_PASSWORD
+      - LDAP_CONFIG_PASSWORD=$LDAP_CONFIG_PASSWORD
+      - LDAP_TLS_CRT_FILENAME=$LDAP_TLS_CRT_FILENAME
+      - LDAP_TLS_KEY_FILENAME=$LDAP_TLS_KEY_FILENAME
+      - LDAP_TLS_CA_CRT_FILENAME=$LDAP_TLS_CA_CRT_FILENAME
+#     networks:
+#       - default
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: phpldapadmin
+    hostname: phpldapadmin
+    ports:
+      - $LDAPADM_PORT:80
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+      - PHPLDAPADMIN_HTTPS=$PHPLDAPADMIN_HTTPS
+    depends_on: 
+      - openldap
+#     networks:
+#       - default
+
+# networks:
+#   default:
+#     external:
+#       name: $NETWORK_NAME
