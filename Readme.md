@@ -21,3 +21,14 @@ Change data if necessary.
 or use make (unix):
 
 ``make build``
+
+### Step 4 - Authorize
+
+Open phpldapadmin in ``http://localhost:8081/``
+
+Authorize with admin privileges:
+
+Login: ``cn=admin,dc=local,dc=host``
+Passwd: ``admin``
+
+Or yours own data from .env file

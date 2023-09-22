@@ -2,42 +2,47 @@ version: "3"
 
 services:
   openldap:
-    image: osixia/openldap:1.5.0
     container_name: openldap
-    hostname: openldap
+    image: pgarrett/ldap-alpine
+    restart: always
     ports:
-      - $LDAP_PORT:389
-      - $LDAPS_PORT:636
-    restart: unless-stopped
-    working_dir: /app
+      - "$LDAP_PORT:389"
+      - "$LDAPS_PORT:689"
     volumes:
-      - ./data/slapd/database:/var/lib/ldap:z
-      - ./data/slapd/config:/etc/ldap/slapd.d:z
-      - ./data/certificates:/container/service/slapd/assets/certs:z
-    environment: 
-      - LDAP_DOMAIN=$LDAP_DOMAIN
-      - LDAP_BASE_DN=$LDAP_BASE_DN
-      - LDAP_ORGANISATION=$LDAP_ORGANISATION
-      - LDAP_ADMIN_USERNAME=$LDAP_ADMIN_USERNAME
-      - LDAP_ADMIN_PASSWORD=$LDAP_ADMIN_PASSWORD
-      - LDAP_CONFIG_PASSWORD=$LDAP_CONFIG_PASSWORD
-      - LDAP_TLS_CRT_FILENAME=$LDAP_TLS_CRT_FILENAME
-      - LDAP_TLS_KEY_FILENAME=$LDAP_TLS_KEY_FILENAME
-      - LDAP_TLS_CA_CRT_FILENAME=$LDAP_TLS_CA_CRT_FILENAME
+      - "${PWD}/data/ldif:/ldif"
+      - "${PWD}/data/certs:/etc/ssl/certs"
+      - "${PWD}/data/openldap:/var/lib/openldap/openldap-data"
+    environment:
+      - TLS_VERIFY_CLIENT=$TLS_VERIFY_CLIENT
+      - ORGANISATION_NAME=$ORGANISATION_NAME
+      - SUFFIX=$SUFFIX
+      - ROOT_USER=$ROOT_USER
+      - ROOT_PW=$ROOT_PW
+      - USER_UID=$USER_UID
+      - USER_GIVEN_NAME=$USER_GIVEN_NAME
+      - USER_SURNAME=$USER_SURNAME
+      - USER_EMAIL=$USER_EMAIL
+      - USER_PW=$USER_PW
+      # - ACCESS_CONTROL="access to * by * read"
+      - LOG_LEVEL=stats
 #     networks:
 #       - default
 
   phpldapadmin:
-    image: osixia/phpldapadmin:0.9.0
+    image: ghcr.io/sudo-bot/docker-phpldapadmin/docker-phpldapadmin:latest
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "#PYTHON2BASH:[{'openldap': [{'server': [{'tls': False}]},{'login': [{'bind_id': 'cn=admin,dc=local,dc=host'}]}]}]"
     container_name: phpldapadmin
     hostname: phpldapadmin
+    depends_on:
+      - openldap
     ports:
       - $LDAPADM_PORT:80
-    environment:
-      - PHPLDAPADMIN_LDAP_HOSTS=openldap
-      - PHPLDAPADMIN_HTTPS=$PHPLDAPADMIN_HTTPS
-    depends_on: 
-      - openldap
+    healthcheck:
+      test: ["CMD", "curl", "-s", "--fail", "http://127.0.0.1/.nginx/status"]
+      start_period: 5s
+      interval: 15s
+      timeout: 1s
 #     networks:
 #       - default
 
